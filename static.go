@@ -32,8 +32,9 @@ func init() {
 	if _, devMode := os.LookupEnv("DEV_MODE"); devMode {
 		fsys = localDisk
 	}
-	// serve static files (css, js, etc) from fs
-	http.Handle("/static/", http.FileServer(http.FS(fsys)))
+	// serve static files (css, js, etc) from fs. We disable caching to
+	// faciliate development (and we really don't care about scaling...)
+	http.Handle("/static/", noCache(http.FileServer(http.FS(fsys))))
 	// render templates from fs
 	renderer = &templateRenderer{fsys}
 }
@@ -48,4 +49,12 @@ func (r *templateRenderer) render(name string, w io.Writer, data any) error {
 		return err
 	}
 	return tpl.ExecuteTemplate(w, "layout", data)
+}
+
+// noCache is middleware that adds headers to disable caching
+func noCache(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache, private, max-age=0")
+		h.ServeHTTP(w, r)
+	})
 }

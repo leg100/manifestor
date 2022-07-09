@@ -3,15 +3,15 @@
 {{ end }}
 
 {{ define "content" }}
-<div>
+<div class="center">
   <div>
-    <span>App ID: </span><span>{{ .GetID }}</span>
+    <span class="label">App ID </span><span class="data">{{ .GetID }}</span>
   </div>
   <div>
-    <span>PEM: </span><span>{{ .GetPEM }}</span>
+    <span class="label">Webhook Secret </span><span class="data">{{ .GetWebhookSecret }}</span>
   </div>
   <div>
-    <span>Webhook Secret: </span><span>{{ .GetWebhookSecret }}</span>
+    <span class="label">PEM </span><pre><span class="data">{{ .GetPEM }}</span></pre>
   </div>
 </div>
 {{ end }}
