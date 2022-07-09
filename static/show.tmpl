@@ -1,0 +1,17 @@
+{{ define "response" }}
+  {{ template "layout" . }}
+{{ end }}
+
+{{ define "content" }}
+<div>
+  <div>
+    <span>App ID: </span><span>{{ .GetID }}</span>
+  </div>
+  <div>
+    <span>PEM: </span><span>{{ .GetPEM }}</span>
+  </div>
+  <div>
+    <span>Webhook Secret: </span><span>{{ .GetWebhookSecret }}</span>
+  </div>
+</div>
+{{ end }}

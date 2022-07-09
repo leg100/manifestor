@@ -1,5 +1,9 @@
+# builds
+_build/
+
 # direnv
 .envrc
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
