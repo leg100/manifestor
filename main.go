@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"embed"
 	"fmt"
-	"html"
 	"net"
 	"net/http"
 	"os"
@@ -13,9 +11,6 @@ import (
 
 	"github.com/pkg/browser"
 )
-
-//go:embed static
-var static embed.FS
 
 func main() {
 	if err := run(); err != nil {
@@ -34,9 +29,8 @@ func run() error {
 
 	// Setup manifest server routes
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
+		tpl.Execute(w, nil)
 	})
-	http.Handle("/static", http.FileServer(http.FS(static)))
 
 	if err := browser.OpenURL("http://" + listener.Addr().String()); err != nil {
 		return err
