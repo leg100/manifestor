@@ -2,13 +2,10 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"flag"
 	"fmt"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,15 +21,19 @@ var (
 	org string
 	// final app cfg inc. PEM, webhook secret, and App ID
 	cfg *github.AppConfig = &github.AppConfig{
+		Name:          stringPtr(name),
 		ID:            int64Ptr(appID),
 		PEM:           stringPtr(pem),
 		WebhookSecret: stringPtr(webhookSecret),
 	}
+	// hostname of github server
+	githubHostname string
 )
 
 func init() {
 	flag.IntVar(&port, "port", 0, "Port to listen on; defaults to choosing port dynamically")
 	flag.StringVar(&org, "org", "", "Github organization in which to register app. If not specified then the app is registered in your personal account.")
+	flag.StringVar(&githubHostname, "hostname", "github.com", "Hostname of github server. Defaults to github.com.")
 	flag.Parse()
 }
 
@@ -46,74 +47,20 @@ func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	catchCtrlC(cancel)
 
-	state, err := generateRandomString(32)
-	if err != nil {
-		return err
-	}
-
 	listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", port))
 	if err != nil {
 		return err
 	}
 	serverURL := "http://" + listener.Addr().String()
 
-	newAppURL := url.URL{
-		Scheme:   "https",
-		Host:     "github.com",
-		Path:     "/settings/apps/new",
-		RawQuery: "state=" + state,
+	m, err := newManifestor()
+	if err != nil {
+		return err
 	}
-	if org != "" {
-		newAppURL.Path = "/organizations/" + org + newAppURL.Path
-	}
-
-	// The 'submit' page
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		err := renderer.render("submit.tmpl", w, struct {
-			State       string
-			RedirectURL string
-			NameSuffix  string
-			NewAppURL   string
-		}{
-			State:       state,
-			RedirectURL: "http://" + r.Host + "/complete",
-			NameSuffix:  state[:4],
-			NewAppURL:   newAppURL.String(),
-		})
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-		}
-	})
-
-	http.HandleFunc("/complete", func(w http.ResponseWriter, r *http.Request) {
-		if state != r.URL.Query().Get("state") {
-			http.Error(w, "state paramater mismatch", 500)
-			return
-		}
-
-		code := r.URL.Query().Get("code")
-		if code == "" {
-			http.Error(w, "code parameter not found", 500)
-			return
-		}
-
-		client := github.NewClient(nil)
-		var err error
-		cfg, _, err = client.Apps.CompleteAppManifest(r.Context(), code)
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
-
-		http.Redirect(w, r, "/show", 302)
-	})
-
-	http.HandleFunc("/show", func(w http.ResponseWriter, r *http.Request) {
-		err := renderer.render("show.tmpl", w, cfg)
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-		}
-	})
+	http.HandleFunc("/", m.submit)
+	http.HandleFunc("/complete", m.complete)
+	http.HandleFunc("/show", m.show)
+	http.HandleFunc("/download", m.download)
 
 	if _, disable := os.LookupEnv("DISABLE_BROWSER"); !disable {
 		if err := browser.OpenURL(serverURL); err != nil {
@@ -141,15 +88,6 @@ func catchCtrlC(cancel context.CancelFunc) {
 		signal.Stop(signals)
 		cancel()
 	}()
-}
-
-func generateRandomString(size int) (string, error) {
-	b := make([]byte, size)
-	_, err := rand.Read(b)
-	if err != nil {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
 func stringPtr(s string) *string { return &s }

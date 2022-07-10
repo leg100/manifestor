@@ -206,17 +206,23 @@ a:hover {
   background: paleturquoise;
 }
 
-.kv {
+.group {
   display: flex;
   flex-direction: column;
   gap: 0.3em;
 }
 
-.key-label {
+.group .label {
   font-weight: bolder;
+  gap: 0.5em;
 }
 
-.copy-clipboard {
+.annotation {
+  font-weight: lighter;
+}
+
+.copy-clipboard:hover {
+  text-decoration: underline;
 }
 
 .value {

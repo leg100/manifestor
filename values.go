@@ -2,6 +2,7 @@ package main
 
 var (
 	// placeholders for testing purposes
+	name                = "manifestor-123"
 	appID         int64 = 218591
 	webhookSecret       = "0bc235265335720b96d2de732d25ce3c15f44011"
 	pem                 = `-----BEGIN RSA PRIVATE KEY-----
