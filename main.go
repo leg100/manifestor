@@ -6,9 +6,9 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -55,19 +55,30 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	url := "http://" + listener.Addr().String()
-	log.Println("running server at", url)
+	serverURL := "http://" + listener.Addr().String()
 
-	// Setup manifest server routes
+	newAppURL := url.URL{
+		Scheme:   "https",
+		Host:     "github.com",
+		Path:     "/settings/apps/new",
+		RawQuery: "state=" + state,
+	}
+	if org != "" {
+		newAppURL.Path = "/organizations/" + org + newAppURL.Path
+	}
+
+	// The 'submit' page
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		err := renderer.render("submit.tmpl", w, struct {
 			State       string
 			RedirectURL string
 			NameSuffix  string
+			NewAppURL   string
 		}{
 			State:       state,
-			RedirectURL: url + "/complete",
+			RedirectURL: "http://" + r.Host + "/complete",
 			NameSuffix:  state[:4],
+			NewAppURL:   newAppURL.String(),
 		})
 		if err != nil {
 			http.Error(w, err.Error(), 500)
@@ -76,15 +87,13 @@ func run() error {
 
 	http.HandleFunc("/complete", func(w http.ResponseWriter, r *http.Request) {
 		if state != r.URL.Query().Get("state") {
-			log.Fatal("state paramater mismatch")
-			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "state paramater mismatch", 500)
 			return
 		}
 
 		code := r.URL.Query().Get("code")
 		if code == "" {
-			log.Fatal("code parameter not found")
-			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "code parameter not found", 500)
 			return
 		}
 
@@ -92,11 +101,9 @@ func run() error {
 		var err error
 		cfg, _, err = client.Apps.CompleteAppManifest(r.Context(), code)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, err.Error(), 500)
 			return
 		}
-
-		log.Printf("Successfully created github app %q. App ID: %d\n", cfg.GetName(), cfg.GetID())
 
 		http.Redirect(w, r, "/show", 302)
 	})
@@ -109,7 +116,7 @@ func run() error {
 	})
 
 	if _, disable := os.LookupEnv("DISABLE_BROWSER"); !disable {
-		if err := browser.OpenURL(url); err != nil {
+		if err := browser.OpenURL(serverURL); err != nil {
 			return err
 		}
 	}

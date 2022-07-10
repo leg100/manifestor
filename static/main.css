@@ -206,9 +206,24 @@ a:hover {
   background: paleturquoise;
 }
 
-.label {
-  display: block;
+.kv {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+
+.key-label {
   font-weight: bolder;
+}
+
+.copy-clipboard {
+}
+
+.value {
+  font-family: var(--alt-font);
+  /* light grey background */
+  background: #e7e7e7;
+  white-space: pre;
 }
 
 /* center content e.g. the login prompt */

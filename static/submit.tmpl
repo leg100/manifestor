@@ -1,5 +1,5 @@
 {{ define "content" }}
-<form action="https://github.com/settings/apps/new?state={{ .State }}" method="post">
+<form action="{{ .NewAppURL }}" method="post">
   <label>Create a GitHub App Manifest:</label>
   <textarea cols="72" rows="25" name="manifest" id="manifest"></textarea><br>
  <input type="submit" value="Submit">

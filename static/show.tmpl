@@ -1,13 +1,28 @@
 {{ define "content" }}
 <div class="center">
-  <div>
-    <span class="label">App ID </span><span class="data">{{ .GetID }}</span>
+  <div class="kv">
+    <div class="key">
+      <span class="key-label">App ID</span> <span class="copy-clipboard">[copy to clipboard]</span>
+    </div>
+    <div>
+      <span class="value">{{ .GetID }}</span>
+    </div>
   </div>
-  <div>
-    <span class="label">Webhook Secret </span><span class="data">{{ .GetWebhookSecret }}</span>
+  <div class="kv">
+    <div class="key">
+      <span class="key-label">Webhook Secret</span> <span class="copy-clipboard">[copy to clipboard]</span>
+    </div>
+    <div>
+      <span class="value">{{ .GetWebhookSecret }}</span>
+    </div>
   </div>
-  <div>
-    <span class="label">PEM</span><pre class="data">{{ .GetPEM }}</pre>
+  <div class="kv">
+    <div class="key">
+      <span class="key-label">PEM</span> <span class="copy-clipboard">[copy to clipboard]</span>
+    </div>
+    <div>
+      <span class="value">{{ .GetPEM }}</span>
+    </div>
   </div>
 </div>
 {{ end }}
